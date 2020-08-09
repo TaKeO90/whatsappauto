@@ -26,8 +26,9 @@ class ParseVcf:
         except FileNotFoundError :
             raise FileNotFoundError("File Not Found")
 
-    def GetContacts(self) -> List[Contact]:
+    def GetContacts(self,name=False,numbers=False) -> List[Contact]:
         preAdd, contacts = [] , []
+        custom = []
         m = dict.fromkeys(list(Contact.__dict__["_fields"]),None)
         for e in self.elements:
             if e.startswith("FN"):
@@ -47,5 +48,13 @@ class ParseVcf:
 
             if len(preAdd) == 3:
                 contacts.append(Contact(preAdd[0],preAdd[1],preAdd[2]))
-                preAdd = []
-        return contacts
+                if name:
+                    custom.append(preAdd[0])
+                    preAdd = []
+                elif numbers:
+                    custom.append(preAdd[2])
+                    preAdd = []
+                else :
+                    custom.append(preAdd[0])
+                    preAdd = []
+        return custom

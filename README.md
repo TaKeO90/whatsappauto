@@ -7,8 +7,8 @@
 # USAGE
     Need Python3.8 or later
 
-    ```sh
-        $python3.8 -m pip install -r requirements
-        $python3.8 whatsappauto --help 
-    ```
+  ```sh
+   $ python3.8 -m pip install -r requirements
+   $ python3.8 whatsappauto --help 
+   ```
 

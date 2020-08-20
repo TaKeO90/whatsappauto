@@ -58,7 +58,6 @@ class Config:
 ####
 
 
-
 class WhatsappB:
     def __init__(self,vcffile:str,text:str,image:str,document:str):
         self.vcffile = vcffile
@@ -70,7 +69,7 @@ class WhatsappB:
             self.driver = webdriver.Chrome(driverP)
             self.driver.get(WHATSAPP_WEB_APP)
         except Exception as e:
-            raise Exception("Cannot load chrome Driver",type(e).__name__(),e)
+            raise Exception("Cannot load chrome Driver",type(e).__name__,e)
 
 
     def ExtractContacts(self) -> List[Any]:
@@ -87,17 +86,21 @@ class WhatsappB:
 
 
     def _sendImage(self):
-        #click on share icon to share an image or document
-        icon = self.driver.find_element_by_css_selector("span[data-icon='clip']").click()
-        #type the images or document path 
-        putPath = self.driver.find_element_by_css_selector(("input[type='file']")).send_keys(self.image)
-        putPath.send_keys(ENTER)
-        #click on send button
-#        clickBtn = self.driver.find_element_by_css_selector(("span[data-icon='send-light']")).click()
-#        time.sleep(4.2)
+        try :
+            #click on share icon to share an image or document
+            icon = self.driver.find_element_by_css_selector("span[data-icon='clip']").click()
+            time.sleep(2)
+            putPath = self.driver.find_element_by_css_selector("input[type='file']").send_keys(self.image)
+            time.sleep(2)
+            clickBtn = self.driver.find_element_by_css_selector("span[data-icon='send']").click()
+            time.sleep(2)
+        except Exception as e:
+            print("Failed To Locate and Element",e)
+            self.driver.quit()
 
 
-    def MapNums(self,contact:str):
+    #this function is for sending text msgs only
+    def MapNums(self,contact:str) -> str :
         self.failed = []
         try: 
             contactSearch = self.driver.find_element_by_class_name("_3FRCZ")
@@ -106,33 +109,41 @@ class WhatsappB:
             selectedCnt = self.driver.find_element_by_xpath("//span[@title='" + contact  + "']").click()
             if self.text is not None :
                 self._sendTextmsg()
-            elif self.image is not None:
-                self._sendImage()
-            else :
-                print("only image path and text messages are allowed")
-                self.driver.close()
-                sys.exit(2)
             return contact
         except Exception as e:
             self.failed.append(contact)
             pass
+
+
+    def image_sender(self, contacts:list):
+        for contact in contacts :
+            contactSearch = self.driver.find_element_by_class_name("_3FRCZ")
+            contactSearch.send_keys(contact)
+            contactSearch.send_keys(ENTER)
+            selectedCnt = self.driver.find_element_by_xpath("//span[@title='" + contact  + "']").click()
+            self._sendImage()
+            time.sleep(3)
+            print("sent to ",contact)
+        self.driver.quit()
+
 
     def run(self) :
         start = input("Scan the QR Code then Enter y if you're done: ")
         rightAnsw = "y"
         if start == rightAnsw.upper() or start ==  rightAnsw:
             contacts = self.ExtractContacts()
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.map(self.MapNums,contacts)
-                for cSent in future:
-                    if cSent != None:
-                        print(f"sent to {cSent}")
-            print(f"Failed {len(self.failed)} times ==> {(',').join(self.failed)}")
-            time.sleep(1.2)
-            self.driver.close()
+            if self.text != None :
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.map(self.MapNums,contacts)
+                    for cSent in future:
+                        if cSent != None:
+                            print(f"sent to {cSent}")
+                print(f"Failed {len(self.failed)} times ==> {(',').join(self.failed)}")
+                self.driver.close()
+            elif self.image != None:
+                self.image_sender(contacts)
         else:
-            self.driver.close()
-            sys.exit(1)
+            self.driver.quit()
 
 
 
